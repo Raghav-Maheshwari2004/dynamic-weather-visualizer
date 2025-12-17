@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Search, MapPin, Wind, Eye, Droplets, Sunrise, Sunset, Gauge, Sun, CloudRain, Moon, Compass, Thermometer, Activity, Globe, Clock, Cloud, Navigation, Menu, X, Plus, GripHorizontal, Waves, LayoutDashboard } from "lucide-react";
 
 // --- API CONFIG ---
-const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "";
+const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "a530449eb9d5924d30263ecbe0822478"; // Added fallback for testing
 
 // --- TYPES ---
 type WeatherType = "clear" | "cloudy" | "rain" | "storm" | "snow";
@@ -90,6 +90,7 @@ export default function Home() {
   const [snowflakes, setSnowflakes] = useState<{id: number, size: number, left: number, speed: number, delay: number, swing: number}[]>([]);
   const [stars, setStars] = useState<{id: number, top: number, left: number, size: number, delay: number}[]>([]);
   
+  // Hover/Click States (Strings for unique IDs, or null)
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [hoveredDroplet, setHoveredDroplet] = useState(false);
 
@@ -148,7 +149,6 @@ export default function Home() {
   const fetchWeather = async (query: string) => {
     if (!query) return;
     setLoading(true); setError("");
-    if (!API_KEY) { setError("Missing API key"); setLoading(false); return; }
     try {
       const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${API_KEY}&units=metric`);
       if (!res.ok) throw new Error("City not found");
@@ -319,7 +319,7 @@ export default function Home() {
                 </div>
               )}
               
-              {/* TIME TOOLTIP (BELOW MOON) */}
+              {/* TIME TOOLTIP */}
               <div className={`absolute top-[120%] right-0 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 z-50 ${hoveredObject === 'celestial' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
                 <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Local Time</div>
                 <div className="text-xl font-bold">{getLocalTime()}</div>
@@ -331,9 +331,9 @@ export default function Home() {
              className="absolute top-1/2 left-1/2 w-[160px] h-[160px] -translate-x-[55%] -translate-y-[45%] pointer-events-auto cursor-help group/ring"
              onMouseEnter={() => setHoveredObject("temp_ring")}
              onMouseLeave={() => setHoveredObject(null)}
+             onClick={() => setHoveredObject(hoveredObject === "temp_ring" ? null : "temp_ring")}
           >
              <svg viewBox="0 0 120 120" className="w-full h-full">
-                {/* Background Track */}
                 <path 
                     d="M 60 110 A 50 50 0 0 1 10 60" 
                     fill="none" 
@@ -342,7 +342,6 @@ export default function Home() {
                     strokeLinecap="round"
                 />
                 
-                {/* Active Temp Fill */}
                 <path 
                     d="M 60 110 A 50 50 0 0 1 10 60" 
                     fill="none" 
@@ -362,7 +361,7 @@ export default function Home() {
                 </defs>
              </svg>
 
-             {/* TEMP TOOLTIP (FIXED Z-INDEX) */}
+             {/* TEMP TOOLTIP */}
              <div className={`absolute top-full right-full mr-2 w-max bg-slate-900/90 backdrop-blur-md border border-red-500/30 text-white text-sm font-medium py-2 px-4 rounded-xl shadow-2xl transition-opacity duration-300 pointer-events-none z-50 ${hoveredObject === 'temp_ring' ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex items-center gap-2">
                     <Thermometer size={16} className="text-red-400"/>
@@ -400,6 +399,7 @@ export default function Home() {
                     <path fill="currentColor" d={cloudPath} />
                 </svg>
                 
+                {/* Cloud Tooltip: Hover only on desktop, auto-handled by click elsewhere */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover/cloud:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                     <span className="font-bold flex items-center gap-1">
                         <CloudRain size={10} className="text-blue-300"/>
@@ -419,9 +419,10 @@ export default function Home() {
           ))}
         </div>
 
-        {/* BOAT WITH TOOLTIP */}
-        <div className={`absolute bottom-[20%] left-[10%] z-[30] cursor-help group ${isFrozen ? '' : 'animate-bob'}`} style={{ animationDuration: layerConfig[2].bobSpeed, animationDelay: layerConfig[2].bobDelay, transform: isFrozen ? 'translateY(15px)' : 'none' }}>
-          <svg width="260" height="260" viewBox="0 0 120 130" className="drop-shadow-2xl transition-transform duration-1000 ease-in-out" style={{ transform: `rotate(${boatRotation + (weather === 'storm' && lightning ? Math.random() * 10 - 5 : 0)}deg)` }}>
+        {/* BOAT */}
+        <div className={`absolute bottom-[20%] md:bottom-[20%] bottom-28 left-[10%] z-[30] cursor-help group ${isFrozen ? '' : 'animate-bob'}`} style={{ animationDuration: layerConfig[2].bobSpeed, animationDelay: layerConfig[2].bobDelay, transform: isFrozen ? 'translateY(15px)' : 'none' }}>
+          {/* Responsive Boat SVG: Larger on mobile to be visible/tappable */}
+          <svg viewBox="0 0 120 130" className="w-40 md:w-64 h-auto drop-shadow-2xl transition-transform duration-1000 ease-in-out" style={{ transform: `rotate(${boatRotation + (weather === 'storm' && lightning ? Math.random() * 10 - 5 : 0)}deg)` }} onClick={() => setHoveredObject(hoveredObject === "boat" ? null : "boat")}>
             <g style={{ filter: isFrozen ? 'hue-rotate(180deg) saturate(0.5) brightness(1.2)' : 'none', transition: 'filter 1s' }}>
               <path d={boatPaths.mastBoom} fill={themeGroup.boat.mast} />
               <path d={boatPaths.mainsail} fill={themeGroup.boat.sail} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.06})` }}/>
@@ -431,8 +432,8 @@ export default function Home() {
             </g>
           </svg>
           
-          {/* BOAT GLASS TOOLTIP */}
-          <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm py-4 px-6 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none translate-y-2 group-hover:translate-y-0 w-56 z-50">
+          {/* BOAT GLASS TOOLTIP - Show on hover (desktop) OR click (mobile) */}
+          <div className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm py-4 px-6 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 w-56 z-50 ${hoveredObject === 'boat' ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0'}`}>
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
               <Wind size={18} className="text-blue-400"/>
               <span className="font-bold text-base tracking-wide">Wind Report</span>
@@ -474,10 +475,8 @@ export default function Home() {
              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
                 <div className="text-slate-400">Latitude</div>
                 <div className="font-mono text-right">{realData ? realData.coord.lat : "--"}</div>
-                
                 <div className="text-slate-400">Longitude</div>
                 <div className="font-mono text-right">{realData ? realData.coord.lon : "--"}</div>
-                
                 <div className="text-slate-400">Sea Level</div>
                 <div className="font-mono text-right">{realData && realData.main.sea_level ? `${realData.main.sea_level} hPa` : "N/A"}</div>
              </div>
@@ -503,8 +502,8 @@ export default function Home() {
           ========================================================================= */}
       <div className="absolute inset-0 z-[60] pointer-events-none">
         
-        {/* TOP BAR */}
-        <div className="absolute top-6 left-6 pointer-events-auto flex items-center gap-4">
+        {/* TOP BAR - Responsive */}
+        <div className="absolute top-6 left-6 pointer-events-auto flex items-center gap-4 flex-wrap">
           <button 
             onClick={() => setMenuOpen(!menuOpen)} 
             className="bg-slate-900/40 backdrop-blur-xl p-3 rounded-full text-white border border-white/10 hover:bg-slate-800 transition-colors shadow-2xl"
@@ -520,18 +519,18 @@ export default function Home() {
               type="text" 
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="Search City..."
-              className="bg-transparent border-none outline-none text-white placeholder-white/70 px-4 w-40 font-medium"
+              placeholder="Search..."
+              className="bg-transparent border-none outline-none text-white placeholder-white/70 px-4 w-32 md:w-40 font-medium"
             />
             <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full transition-colors">
               {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Search size={20} />}
             </button>
             
-            {/* DROPS */}
             <div 
                 className="absolute top-full left-10 flex gap-1 -mt-1 z-[-1] cursor-pointer group/drops pointer-events-auto"
                 onMouseEnter={() => setHoveredDroplet(true)}
                 onMouseLeave={() => setHoveredDroplet(false)}
+                onClick={() => setHoveredDroplet(!hoveredDroplet)}
             >
                 <svg width="40" height="20" viewBox="0 0 40 20" className="drop-shadow-sm">
                     <path d="M5,0 Q10,10 5,15 Q0,10 5,0 Z" fill="url(#dropGrad)" opacity="0.9" />
@@ -553,9 +552,9 @@ export default function Home() {
             </div>
           </form>
 
-          {/* PERMANENT CITY DISPLAY */}
+          {/* PERMANENT CITY DISPLAY (Hidden on very small screens if needed, mostly visible) */}
           {realData && (
-            <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-xl p-2 px-4 rounded-full border border-white/10 shadow-xl text-white">
+            <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-xl p-2 px-4 rounded-full border border-white/10 shadow-xl text-white hidden md:flex">
                 <div className="flex items-center gap-1">
                     <MapPin size={16} className="text-blue-400"/>
                     <span className="font-bold text-sm">{realData.name}</span>
@@ -600,31 +599,30 @@ export default function Home() {
           </button>
         </div>
 
-        {/* --- FULL SCREEN DASHBOARD OVERLAY --- */}
+        {/* --- FULL SCREEN DASHBOARD OVERLAY (Responsive Grid) --- */}
         {viewMode === "dashboard" && (
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-3xl z-[200] pointer-events-auto p-8 flex flex-col animate-in fade-in duration-300">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-3xl z-[200] pointer-events-auto p-4 md:p-8 flex flex-col animate-in fade-in duration-300 overflow-y-auto">
+                <div className="flex justify-between items-center mb-4 md:mb-8 flex-shrink-0">
+                    <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
                         <LayoutDashboard className="text-blue-400"/> Weather Station
                     </h1>
                     <button 
                         onClick={() => setViewMode("hud")}
-                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-white transition-colors"
+                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-white transition-colors text-sm md:text-base"
                     >
-                        <X size={18}/> Close Dashboard
+                        <X size={18}/> Close
                     </button>
                 </div>
                 
                 {realData ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow overflow-y-auto">
-                        
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-8">
                         {/* MAIN CARD */}
                         <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-white/10 p-6 rounded-3xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-6 opacity-20"><MapPin size={100}/></div>
+                            <div className="absolute top-0 right-0 p-6 opacity-20"><MapPin size={80} /></div>
                             <div className="text-slate-300 uppercase text-xs font-bold tracking-widest mb-1">Current Location</div>
-                            <div className="text-4xl font-bold text-white mb-1">{realData.name}</div>
+                            <div className="text-3xl md:text-4xl font-bold text-white mb-1">{realData.name}</div>
                             <div className="text-sm text-slate-300 mb-6">{realData.sys.country}</div>
-                            <div className="text-6xl font-bold text-white mb-2">{Math.round(realData.main.temp)}°</div>
+                            <div className="text-5xl md:text-6xl font-bold text-white mb-2">{Math.round(realData.main.temp)}°</div>
                             <div className="text-lg text-blue-200 capitalize">{realData.weather[0].description}</div>
                         </div>
 
@@ -727,6 +725,7 @@ export default function Home() {
               left: widget.x, 
               top: widget.y,
               zIndex: widget.zIndex,
+              touchAction: 'none',
               cursor: draggedWidget === widget.id ? 'grabbing' : 'grab'
             }}
             onMouseDown={(e) => handleMouseDown(e, widget.id)}
