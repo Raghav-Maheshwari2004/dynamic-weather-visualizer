@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Search, MapPin, Wind, Eye, Droplets, Sunrise, Sunset, Gauge, Sun, CloudRain, Moon, Compass, Thermometer, Activity, Globe, Clock, Cloud, Navigation, Menu, X, Plus, GripHorizontal, Waves, LayoutDashboard } from "lucide-react";
 
 // --- API CONFIG ---
-const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "a530449eb9d5924d30263ecbe0822478"; // Added fallback for testing
+const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "";
 
 // --- TYPES ---
 type WeatherType = "clear" | "cloudy" | "rain" | "storm" | "snow";
@@ -149,6 +149,7 @@ export default function Home() {
   const fetchWeather = async (query: string) => {
     if (!query) return;
     setLoading(true); setError("");
+    if (!API_KEY) { setError("Missing API key"); setLoading(false); return; }
     try {
       const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${API_KEY}&units=metric`);
       if (!res.ok) throw new Error("City not found");
