@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Search, MapPin, Wind, Eye, Droplets, Sunrise, Sunset, Gauge, Sun, CloudRain, Moon, Compass, Thermometer, Activity, Globe, Clock, Cloud, Navigation, Menu, X, Plus, GripHorizontal, Waves, LayoutDashboard } from "lucide-react";
+import { Search, MapPin, Wind, Eye, Droplets, Sunrise, Sunset, Gauge, Sun, CloudRain, Moon, Compass, Thermometer, Activity, Globe, Clock, Cloud, Navigation, Menu, X, Plus, GripHorizontal, Waves, LayoutDashboard, ArrowDownToLine, ArrowUpToLine, CloudFog } from "lucide-react";
+import SceneBalloon from "@/app/components/scenes/SceneBalloon";
+
+
+
+import { Car, Mountain, Tent, Building2, Ship } from "lucide-react"; // Import icons for menu
 
 // --- API CONFIG ---
 const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || "";
@@ -69,6 +74,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [realData, setRealData] = useState<any>(null);
   const [aqiData, setAqiData] = useState<any>(null);
+  const [currentScene, setCurrentScene] = useState<"boat" | "car" | "balloon" | "campfire" | "city">("boat");
 
   // App State
   const [viewMode, setViewMode] = useState<ViewMode>("hud");
@@ -90,7 +96,7 @@ export default function Home() {
   const [snowflakes, setSnowflakes] = useState<{id: number, size: number, left: number, speed: number, delay: number, swing: number}[]>([]);
   const [stars, setStars] = useState<{id: number, top: number, left: number, size: number, delay: number}[]>([]);
   
-  // Hover/Click States (Strings for unique IDs, or null)
+  // Hover/Click States
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [hoveredDroplet, setHoveredDroplet] = useState(false);
 
@@ -320,7 +326,7 @@ export default function Home() {
                 </div>
               )}
               
-              {/* TIME TOOLTIP */}
+              {/* TIME TOOLTIP (BELOW MOON) */}
               <div className={`absolute top-[120%] right-0 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 z-50 ${hoveredObject === 'celestial' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
                 <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Local Time</div>
                 <div className="text-xl font-bold">{getLocalTime()}</div>
@@ -362,7 +368,7 @@ export default function Home() {
                 </defs>
              </svg>
 
-             {/* TEMP TOOLTIP */}
+             {/* TEMP TOOLTIP (FIXED Z-INDEX) */}
              <div className={`absolute top-full right-full mr-2 w-max bg-slate-900/90 backdrop-blur-md border border-red-500/30 text-white text-sm font-medium py-2 px-4 rounded-xl shadow-2xl transition-opacity duration-300 pointer-events-none z-50 ${hoveredObject === 'temp_ring' ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex items-center gap-2">
                     <Thermometer size={16} className="text-red-400"/>
@@ -420,82 +426,94 @@ export default function Home() {
           ))}
         </div>
 
-        {/* BOAT */}
-        <div className={`absolute bottom-[20%] md:bottom-[20%] bottom-28 left-[10%] z-[30] cursor-help group ${isFrozen ? '' : 'animate-bob'}`} style={{ animationDuration: layerConfig[2].bobSpeed, animationDelay: layerConfig[2].bobDelay, transform: isFrozen ? 'translateY(15px)' : 'none' }}>
-          {/* Responsive Boat SVG: Larger on mobile to be visible/tappable */}
-          <svg viewBox="0 0 120 130" className="w-40 md:w-64 h-auto drop-shadow-2xl transition-transform duration-1000 ease-in-out" style={{ transform: `rotate(${boatRotation + (weather === 'storm' && lightning ? Math.random() * 10 - 5 : 0)}deg)` }} onClick={() => setHoveredObject(hoveredObject === "boat" ? null : "boat")}>
-            <g style={{ filter: isFrozen ? 'hue-rotate(180deg) saturate(0.5) brightness(1.2)' : 'none', transition: 'filter 1s' }}>
-              <path d={boatPaths.mastBoom} fill={themeGroup.boat.mast} />
-              <path d={boatPaths.mainsail} fill={themeGroup.boat.sail} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.06})` }}/>
-              <path d={boatPaths.jib} fill={themeGroup.boat.jib} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.03})` }}/>
-              <path d={boatPaths.hull} fill={themeGroup.boat.hull} />
-              <path d={boatPaths.deck} fill={themeGroup.boat.deck} />
-            </g>
-          </svg>
-          
-          {/* BOAT GLASS TOOLTIP - Show on hover (desktop) OR click (mobile) */}
-          <div className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm py-4 px-6 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 w-56 z-50 ${hoveredObject === 'boat' ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0'}`}>
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
-              <Wind size={18} className="text-blue-400"/>
-              <span className="font-bold text-base tracking-wide">Wind Report</span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-slate-400">Speed</span>
-              <span className="font-bold text-blue-200">{realData ? realData.wind.speed : 0} m/s</span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-slate-400">Gusts</span>
-              <span className="font-bold text-blue-200">{realData && realData.wind.gust ? realData.wind.gust : "0"} m/s</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Direction</span>
-              <div className="flex items-center gap-2 font-bold text-blue-200">
-                 {realData ? getCardinal(realData.wind.deg) : "-"} ({realData ? realData.wind.deg : 0}°)
-                 <Navigation size={12} style={{transform: `rotate(${realData ? realData.wind.deg : 0}deg)`}} />
+        {/* DYNAMIC SCENE RENDERING */}
+        {currentScene === 'boat' && (
+          <>
+            {/* BOAT */}
+            <div className={`absolute bottom-28 md:bottom-[20%] left-[10%] z-[30] cursor-help group ${isFrozen ? '' : 'animate-bob'}`} style={{ animationDuration: layerConfig[2].bobSpeed, animationDelay: layerConfig[2].bobDelay, transform: isFrozen ? 'translateY(15px)' : 'none' }}>
+              {/* Responsive Boat SVG: Larger on mobile to be visible/tappable */}
+              <svg viewBox="0 0 120 130" className="w-40 md:w-64 h-auto drop-shadow-2xl transition-transform duration-1000 ease-in-out" style={{ transform: `rotate(${boatRotation + (weather === 'storm' && lightning ? Math.random() * 10 - 5 : 0)}deg)` }} onClick={() => setHoveredObject(hoveredObject === "boat" ? null : "boat")}>
+                <g style={{ filter: isFrozen ? 'hue-rotate(180deg) saturate(0.5) brightness(1.2)' : 'none', transition: 'filter 1s' }}>
+                  <path d={boatPaths.mastBoom} fill={themeGroup.boat.mast} />
+                  <path d={boatPaths.mainsail} fill={themeGroup.boat.sail} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.06})` }}/>
+                  <path d={boatPaths.jib} fill={themeGroup.boat.jib} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.03})` }}/>
+                  <path d={boatPaths.hull} fill={themeGroup.boat.hull} />
+                  <path d={boatPaths.deck} fill={themeGroup.boat.deck} />
+                </g>
+              </svg>
+              
+              {/* BOAT GLASS TOOLTIP - Show on hover (desktop) OR click (mobile) */}
+              <div className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm py-4 px-6 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 w-56 z-50 ${hoveredObject === 'boat' ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0'}`}>
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+                  <Wind size={18} className="text-blue-400"/>
+                  <span className="font-bold text-base tracking-wide">Wind Report</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-400">Speed</span>
+                  <span className="font-bold text-blue-200">{realData ? realData.wind.speed : 0} m/s</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-400">Gusts</span>
+                  <span className="font-bold text-blue-200">{realData && realData.wind.gust ? realData.wind.gust : "0"} m/s</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Direction</span>
+                  <div className="flex items-center gap-2 font-bold text-blue-200">
+                     {realData ? getCardinal(realData.wind.deg) : "-"} ({realData ? realData.wind.deg : 0}°)
+                     <Navigation size={12} style={{transform: `rotate(${realData ? realData.wind.deg : 0}deg)`}} />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* WAVES */}
-        <div className="absolute bottom-0 left-0 right-0 z-[10] w-full overflow-hidden pointer-events-none" style={{ height: '35vh', minHeight: '300px' }}>
-          {/* WATER HOVER INTERACTION */}
-          <div 
-            className="absolute inset-0 z-[40] pointer-events-auto cursor-help group/water"
-            onMouseEnter={() => setHoveredObject("water")}
-            onMouseLeave={() => setHoveredObject(null)}
-            onClick={() => setHoveredObject(hoveredObject === "water" ? null : "water")}
-          />
-          
-          {/* WATER TOOLTIP */}
-          <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-4 z-50 ${hoveredObject === 'water' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
-             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                <Waves size={18} className="text-cyan-400"/>
-                <span className="font-bold tracking-wide">Location Data</span>
-             </div>
-             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-                <div className="text-slate-400">Latitude</div>
-                <div className="font-mono text-right">{realData ? realData.coord.lat : "--"}</div>
-                <div className="text-slate-400">Longitude</div>
-                <div className="font-mono text-right">{realData ? realData.coord.lon : "--"}</div>
-                <div className="text-slate-400">Sea Level</div>
-                <div className="font-mono text-right">{realData && realData.main.sea_level ? `${realData.main.sea_level} hPa` : "N/A"}</div>
-             </div>
-          </div>
-
-          {isFrozen && <div className="absolute inset-0 z-[30] opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay pointer-events-none" />}
-          {layerConfig.map((layer, index) => (
-            <div key={index} className={`absolute bottom-0 left-0 flex w-[200%] ${isFrozen ? '' : 'animate-flow'}`} style={{ height: '100%', zIndex: layer.z, animationDuration: `${layer.speedBase - intensity}s`, mixBlendMode: isDay ? "multiply" : "normal" }}>
-              <div className={`w-full flex flex-nowrap origin-bottom transition-transform duration-1000 ease-out ${isFrozen ? '' : 'animate-bob'}`} style={{ height: '100%', animationDuration: layer.bobSpeed, animationDelay: layer.bobDelay, transform: `scaleY(var(--wave-scale-y))` }}>
-                {[1, 2].map((i) => (
-                  <svg key={i} className="w-1/2 h-full block" viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <path fill={currentTheme.waves[index]} fillOpacity={layer.opacity} d={layer.path} className="transition-colors duration-1000" />
-                  </svg>
-                ))}
+            {/* WAVES */}
+            <div className="absolute bottom-0 left-0 right-0 z-[10] w-full overflow-hidden pointer-events-none" style={{ height: '35vh', minHeight: '300px' }}>
+              {/* WATER HOVER INTERACTION */}
+              <div 
+                className="absolute inset-0 z-[40] pointer-events-auto cursor-help group/water"
+                onMouseEnter={() => setHoveredObject("water")}
+                onMouseLeave={() => setHoveredObject(null)}
+                onClick={() => setHoveredObject(hoveredObject === "water" ? null : "water")}
+              />
+              
+              {/* WATER TOOLTIP */}
+              <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-4 z-50 ${hoveredObject === 'water' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
+                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                    <Waves size={18} className="text-cyan-400"/>
+                    <span className="font-bold tracking-wide">Location Data</span>
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                    <div className="text-slate-400">Latitude</div>
+                    <div className="font-mono text-right">{realData ? realData.coord.lat : "--"}</div>
+                    
+                    <div className="text-slate-400">Longitude</div>
+                    <div className="font-mono text-right">{realData ? realData.coord.lon : "--"}</div>
+                    
+                    <div className="text-slate-400">Sea Level</div>
+                    <div className="font-mono text-right">{realData && realData.main.sea_level ? `${realData.main.sea_level} hPa` : "N/A"}</div>
+                 </div>
               </div>
+
+              {isFrozen && <div className="absolute inset-0 z-[30] opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay pointer-events-none" />}
+              {layerConfig.map((layer, index) => (
+                <div key={index} className={`absolute bottom-0 left-0 flex w-[200%] ${isFrozen ? '' : 'animate-flow'}`} style={{ height: '100%', zIndex: layer.z, animationDuration: `${layer.speedBase - intensity}s`, mixBlendMode: isDay ? "multiply" : "normal" }}>
+                  <div className={`w-full flex flex-nowrap origin-bottom transition-transform duration-1000 ease-out ${isFrozen ? '' : 'animate-bob'}`} style={{ height: '100%', animationDuration: layer.bobSpeed, animationDelay: layer.bobDelay, transform: `scaleY(var(--wave-scale-y))` }}>
+                    {[1, 2].map((i) => (
+                      <svg key={i} className="w-1/2 h-full block" viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <path fill={currentTheme.waves[index]} fillOpacity={layer.opacity} d={layer.path} className="transition-colors duration-1000" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
+
+        
+        {currentScene === 'balloon' && <SceneBalloon weather={weather} isDay={isDay} intensity={intensity} realData={realData} />}
+        
+
       </div>
 
       {/* =========================================================================
@@ -527,6 +545,7 @@ export default function Home() {
               {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Search size={20} />}
             </button>
             
+            {/* DROPS */}
             <div 
                 className="absolute top-full left-10 flex gap-1 -mt-1 z-[-1] cursor-pointer group/drops pointer-events-auto"
                 onMouseEnter={() => setHoveredDroplet(true)}
@@ -589,6 +608,14 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {/* SCENE SELECTOR */}
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">Environments</div>
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            <button onClick={() => setCurrentScene("boat")} className={`p-2 rounded-lg border ${currentScene === 'boat' ? 'bg-blue-600 border-blue-400' : 'bg-white/5 border-white/5'}`}><Ship size={16} className="text-white mx-auto"/></button>
+           
+            <button onClick={() => setCurrentScene("balloon")} className={`p-2 rounded-lg border ${currentScene === 'balloon' ? 'bg-sky-600 border-sky-400' : 'bg-white/5 border-white/5'}`}><Wind size={16} className="text-white mx-auto"/></button>
+             </div>
           
           <div className="h-px bg-white/10 w-full mb-4"></div>
           
@@ -622,12 +649,17 @@ export default function Home() {
                             <div className="absolute top-0 right-0 p-6 opacity-20"><MapPin size={80} /></div>
                             <div className="text-slate-300 uppercase text-xs font-bold tracking-widest mb-1">Current Location</div>
                             <div className="text-3xl md:text-4xl font-bold text-white mb-1">{realData.name}</div>
-                            <div className="text-sm text-slate-300 mb-6">{realData.sys.country}</div>
-                            <div className="text-5xl md:text-6xl font-bold text-white mb-2">{Math.round(realData.main.temp)}°</div>
-                            <div className="text-lg text-blue-200 capitalize">{realData.weather[0].description}</div>
+                            <div className="text-sm text-slate-300 mb-6">{realData.sys.country} • {realData.coord.lat.toFixed(2)}° N, {realData.coord.lon.toFixed(2)}° E</div>
+                            <div className="flex items-baseline gap-2 mb-2">
+                                <span className="text-5xl md:text-6xl font-bold text-white">{Math.round(realData.main.temp)}°</span>
+                                <span className="text-slate-400 text-sm">H: {Math.round(realData.main.temp_max)}° L: {Math.round(realData.main.temp_min)}°</span>
+                            </div>
+                            <div className="text-lg text-blue-200 capitalize flex items-center gap-2">
+                                {realData.weather[0].description}
+                            </div>
                         </div>
 
-                        {/* ATMOSPHERE */}
+                        {/* ATMOSPHERE DETAILS */}
                         <div className="bg-white/5 border border-white/10 p-6 rounded-3xl grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                                 <div className="text-slate-400 text-xs uppercase"><Thermometer size={14} className="inline mr-1"/> Feels Like</div>
@@ -644,6 +676,10 @@ export default function Home() {
                             <div className="flex flex-col gap-1">
                                 <div className="text-slate-400 text-xs uppercase"><Eye size={14} className="inline mr-1"/> Visibility</div>
                                 <div className="text-2xl font-bold text-white">{(realData.visibility/1000).toFixed(1)} km</div>
+                            </div>
+                            <div className="flex flex-col gap-1 col-span-2">
+                                <div className="text-slate-400 text-xs uppercase"><CloudFog size={14} className="inline mr-1"/> Cloudiness</div>
+                                <div className="text-2xl font-bold text-white">{realData.clouds.all}%</div>
                             </div>
                         </div>
 
@@ -691,8 +727,8 @@ export default function Home() {
                              </div>
                         </div>
 
-                        {/* AQI & RAIN */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl grid grid-cols-1 gap-4">
+                        {/* POLLUTANTS & AQI */}
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Activity size={20} className="text-green-400"/>
@@ -701,12 +737,29 @@ export default function Home() {
                                 <div className="text-2xl font-bold text-green-300">{aqiData ? aqiData.main.aqi : "--"} <span className="text-sm text-slate-400">/ 5</span></div>
                             </div>
                             <div className="h-px bg-white/10 w-full"/>
+                            {aqiData && aqiData.components && (
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="flex justify-between"><span className="text-slate-400">PM2.5:</span> <span className="text-white font-mono">{aqiData.components.pm2_5}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">PM10:</span> <span className="text-white font-mono">{aqiData.components.pm10}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">NO2:</span> <span className="text-white font-mono">{aqiData.components.no2}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">O3:</span> <span className="text-white font-mono">{aqiData.components.o3}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">SO2:</span> <span className="text-white font-mono">{aqiData.components.so2}</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">CO:</span> <span className="text-white font-mono">{aqiData.components.co}</span></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* RAIN / PRECIPITATION */}
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col justify-center gap-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <CloudRain size={20} className="text-blue-400"/>
                                     <span className="font-bold text-white">Precipitation (1h)</span>
                                 </div>
                                 <div className="text-2xl font-bold text-blue-300">{getPrecipitationVolume()} mm</div>
+                            </div>
+                            <div className="text-xs text-slate-400 text-center mt-2">
+                                Current rain/snow volume in the last hour.
                             </div>
                         </div>
 
@@ -726,7 +779,6 @@ export default function Home() {
               left: widget.x, 
               top: widget.y,
               zIndex: widget.zIndex,
-              touchAction: 'none',
               cursor: draggedWidget === widget.id ? 'grabbing' : 'grab'
             }}
             onMouseDown={(e) => handleMouseDown(e, widget.id)}
