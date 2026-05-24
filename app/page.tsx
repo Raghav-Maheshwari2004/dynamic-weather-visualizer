@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Search, MapPin, Wind, Eye, Droplets, Sunrise, Sunset, Gauge, Sun, CloudRain, Moon, Compass, Thermometer, Activity, Globe, Clock, Cloud, Navigation, Menu, X, Plus, GripHorizontal, Waves, LayoutDashboard, ArrowDownToLine, ArrowUpToLine, CloudFog } from "lucide-react";
 import SceneBalloon from "@/app/components/scenes/SceneBalloon";
+import SceneOrbit from "@/app/components/scenes/SceneOrbit";
 
 
 
@@ -61,20 +62,20 @@ const THEMES = {
 };
 
 const layerConfig = [
-  { speedBase: 35, bobSpeed: "4s",  bobDelay: "0s", path: wavePaths.typeA, opacity: 0.9, z: 10 },
-  { speedBase: 28, bobSpeed: "5s",  bobDelay: "-2s", path: wavePaths.typeC, opacity: 0.85, z: 11 },
-  { speedBase: 20, bobSpeed: "6s",  bobDelay: "-3s", path: wavePaths.typeA, opacity: 0.9, z: 12 },
-  { speedBase: 14, bobSpeed: "3s",  bobDelay: "-1s", path: wavePaths.typeC, opacity: 0.95, z: 13 },
-  { speedBase: 9,  bobSpeed: "4.5s", bobDelay: "-4s", path: wavePaths.typeB, opacity: 1.0, z: 14 },
+  { speedBase: 35, bobSpeed: "4s", bobDelay: "0s", path: wavePaths.typeA, opacity: 0.9, z: 10 },
+  { speedBase: 28, bobSpeed: "5s", bobDelay: "-2s", path: wavePaths.typeC, opacity: 0.85, z: 11 },
+  { speedBase: 20, bobSpeed: "6s", bobDelay: "-3s", path: wavePaths.typeA, opacity: 0.9, z: 12 },
+  { speedBase: 14, bobSpeed: "3s", bobDelay: "-1s", path: wavePaths.typeC, opacity: 0.95, z: 13 },
+  { speedBase: 9, bobSpeed: "4.5s", bobDelay: "-4s", path: wavePaths.typeB, opacity: 1.0, z: 14 },
 ];
 
 export default function Home() {
-  const [city, setCity] = useState("London"); 
+  const [city, setCity] = useState("London");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [realData, setRealData] = useState<any>(null);
   const [aqiData, setAqiData] = useState<any>(null);
-  const [currentScene, setCurrentScene] = useState<"boat" | "car" | "balloon" | "campfire" | "city">("boat");
+  const [currentScene, setCurrentScene] = useState<"boat" | "car" | "balloon" | "campfire" | "orbit">("boat");
 
   // App State
   const [viewMode, setViewMode] = useState<ViewMode>("hud");
@@ -88,14 +89,14 @@ export default function Home() {
   const [weather, setWeather] = useState<WeatherType>("clear");
   const [intensity, setIntensity] = useState(3);
   const [lightning, setLightning] = useState(false);
-  const [fogOpacity, setFogOpacity] = useState(0); 
+  const [fogOpacity, setFogOpacity] = useState(0);
   const [mounted, setMounted] = useState(false);
-  
-  const [clouds, setClouds] = useState<{id: number, width: number, top: number, left: number, speed: number, delay: number}[]>([]);
-  const [raindrops, setRaindrops] = useState<{id: number, height: number, left: number, speed: number, delay: number, rotation: number}[]>([]);
-  const [snowflakes, setSnowflakes] = useState<{id: number, size: number, left: number, speed: number, delay: number, swing: number}[]>([]);
-  const [stars, setStars] = useState<{id: number, top: number, left: number, size: number, delay: number}[]>([]);
-  
+
+  const [clouds, setClouds] = useState<{ id: number, width: number, top: number, left: number, speed: number, delay: number }[]>([]);
+  const [raindrops, setRaindrops] = useState<{ id: number, height: number, left: number, speed: number, delay: number, rotation: number }[]>([]);
+  const [snowflakes, setSnowflakes] = useState<{ id: number, size: number, left: number, speed: number, delay: number, swing: number }[]>([]);
+  const [stars, setStars] = useState<{ id: number, top: number, left: number, size: number, delay: number }[]>([]);
+
   // Hover/Click States
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [hoveredDroplet, setHoveredDroplet] = useState(false);
@@ -125,7 +126,7 @@ export default function Home() {
   const handleMouseMove = (e: React.MouseEvent) => { handleMove(e.clientX, e.clientY); };
   const handleMouseUp = () => { handleEnd(); };
   const handleTouchStart = (e: React.TouchEvent, id: string) => { const touch = e.touches[0]; handleStart(touch.clientX, touch.clientY, id); };
-  const handleTouchMove = (e: React.TouchEvent) => { if(draggedWidget) { const touch = e.touches[0]; handleMove(touch.clientX, touch.clientY); }};
+  const handleTouchMove = (e: React.TouchEvent) => { if (draggedWidget) { const touch = e.touches[0]; handleMove(touch.clientX, touch.clientY); } };
   const handleTouchEnd = () => { handleEnd(); };
 
   // --- HELPERS ---
@@ -143,12 +144,12 @@ export default function Home() {
 
   // --- TEMP CALCULATION ---
   const getTempFill = () => {
-    if(!realData) return 0;
+    if (!realData) return 0;
     const temp = realData.main.temp;
     const min = -5;
     const max = 40;
     const pct = Math.max(0, Math.min(1, (temp - min) / (max - min)));
-    return pct * 78.54; 
+    return pct * 78.54;
   };
 
   // --- API ---
@@ -206,7 +207,7 @@ export default function Home() {
     let rainCount = 0;
     if (weather === "rain" || weather === "storm") {
       setSnowflakes([]);
-      rainCount = 30 + (intensity * 10) + (volume * 20); 
+      rainCount = 30 + (intensity * 10) + (volume * 20);
       setRaindrops(Array.from({ length: Math.min(rainCount, 400) }).map((_, i) => ({
         id: i, height: 10 + Math.random() * 20, left: Math.random() * 100, speed: 0.5 + Math.random() * 0.5, delay: -(Math.random() * 2), rotation: 10 + (intensity * 2)
       })));
@@ -214,10 +215,10 @@ export default function Home() {
       setRaindrops([]);
       rainCount = 50 + (intensity * 10) + (volume * 20);
       setSnowflakes(Array.from({ length: Math.min(rainCount, 200) }).map((_, i) => ({
-        id: i, size: 2 + Math.random() * 4, left: Math.random() * 100, speed: 3 + Math.random() * 5, delay: -(Math.random() * 10), swing: Math.random() * 20 - 10 
+        id: i, size: 2 + Math.random() * 4, left: Math.random() * 100, speed: 3 + Math.random() * 5, delay: -(Math.random() * 10), swing: Math.random() * 20 - 10
       })));
     } else {
-        setRaindrops([]); setSnowflakes([]);
+      setRaindrops([]); setSnowflakes([]);
     }
   }, [weather, intensity, mounted, realData]);
 
@@ -225,7 +226,7 @@ export default function Home() {
     if (!mounted) return;
     if (isDay || weather !== "clear") { setStars([]); return; }
     setStars(Array.from({ length: 50 }).map((_, i) => ({
-        id: i, top: Math.random() * 60, left: Math.random() * 100, size: Math.random() * 2 + 1, delay: Math.random() * 5
+      id: i, top: Math.random() * 60, left: Math.random() * 100, size: Math.random() * 2 + 1, delay: Math.random() * 5
     })));
   }, [isDay, weather, mounted]);
 
@@ -234,7 +235,7 @@ export default function Home() {
     const minDelay = 10000 - (intensity * 900);
     let timer: NodeJS.Timeout;
     const triggerLightning = () => {
-      setLightning(true); setTimeout(() => setLightning(false), 200); 
+      setLightning(true); setTimeout(() => setLightning(false), 200);
       timer = setTimeout(triggerLightning, Math.random() * minDelay + 500);
     };
     triggerLightning(); return () => clearTimeout(timer);
@@ -246,15 +247,15 @@ export default function Home() {
   const currentTheme = themeGroup[weather];
   const isFrozen = weather === "snow";
   const stormMultiplier = weather === "storm" ? 1.5 : 1;
-  const waveScaleY = (1.2 + (intensity * 0.15)) * stormMultiplier; 
+  const waveScaleY = (1.2 + (intensity * 0.15)) * stormMultiplier;
   const bobHeightPx = (10 + (intensity * 8)) * stormMultiplier;
-  const boatRotation = isFrozen ? 25 : intensity * 1.5; 
+  const boatRotation = isFrozen ? 25 : intensity * 1.5;
 
   const getCloudColor = () => {
     const volume = getPrecipitationVolume();
-    if (volume > 2) return isDay ? '#334155' : '#1e293b'; 
-    if (volume > 0.1) return isDay ? '#94a3b8' : '#475569'; 
-    return isDay ? '#fff' : '#64748b'; 
+    if (volume > 2) return isDay ? '#334155' : '#1e293b';
+    if (volume > 0.1) return isDay ? '#94a3b8' : '#475569';
+    return isDay ? '#fff' : '#64748b';
   };
 
   const getLocalTime = () => {
@@ -264,17 +265,38 @@ export default function Home() {
     return cityDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
   };
 
+  // --- ASTRONOMY (SUN & MOON) ---
+  const getAstroData = () => {
+    const utcHours = new Date().getUTCHours() + new Date().getUTCMinutes() / 60;
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+    let sunLon = 180 - (utcHours * 15);
+    if (sunLon < -180) sunLon += 360;
+    const sunLat = -23.44 * Math.cos((360 / 365) * (dayOfYear + 10) * (Math.PI / 180));
+
+    const lunarCycle = 29.53;
+    const knownNewMoon = new Date('2024-01-11T11:57:00Z').getTime();
+    const daysSince = (Date.now() - knownNewMoon) / (1000 * 60 * 60 * 24);
+    const moonPhase = (daysSince % lunarCycle) / lunarCycle;
+    let moonLon = sunLon - (moonPhase * 360);
+    if (moonLon < -180) moonLon += 360;
+    if (moonLon > 180) moonLon -= 360;
+    const moonLat = sunLat * -1;
+
+    return { sunLat, sunLon, moonLat, moonLon, moonPhase };
+  };
+  const astroData = getAstroData();
+
   return (
-    <div 
-      className="flex min-h-screen w-full overflow-hidden bg-slate-900" 
-      onMouseMove={handleMouseMove} 
+    <div
+      className="flex min-h-screen w-full overflow-hidden bg-slate-900"
+      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      
+
       {/* VISUAL ENGINE */}
-      <div 
+      <div
         className={`absolute inset-0 transition-all duration-1000 ${currentTheme.sky}`}
         style={{ "--wave-scale-y": waveScaleY, "--bob-height-neg": `-${bobHeightPx}px` } as React.CSSProperties}
       >
@@ -299,10 +321,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-white z-[40] pointer-events-none transition-opacity duration-100 ease-out" style={{ opacity: lightning ? 0.6 : 0 }} />
 
         {/* FOG */}
-        <div 
+        <div
           className="absolute inset-0 z-[3] pointer-events-none transition-all duration-1000 ease-in-out"
-          style={{ 
-            backgroundColor: isDay ? 'rgba(255, 255, 255, 0.8)' : 'rgba(15, 23, 42, 0.9)', 
+          style={{
+            backgroundColor: isDay ? 'rgba(255, 255, 255, 0.8)' : 'rgba(15, 23, 42, 0.9)',
             opacity: fogOpacity,
             backdropFilter: `blur(${fogOpacity * 10}px)`
           }}
@@ -310,118 +332,134 @@ export default function Home() {
 
         {/* CELESTIAL GROUP */}
         <div className={`absolute top-12 right-12 z-[20] transition-all duration-1000 ${weather === 'rain' || weather === 'storm' ? 'opacity-0 translate-y-10' : 'opacity-100 translate-y-0'}`}>
-          
+
           {/* 1. THE CELESTIAL BODY (Sun/Moon) */}
-          <div 
+          <div
             className="relative cursor-pointer group"
             onMouseEnter={() => setHoveredObject("celestial")}
             onMouseLeave={() => setHoveredObject(null)}
             onClick={() => setHoveredObject(hoveredObject === "celestial" ? null : "celestial")}
           >
-              {isDay ? (
-                <div className="h-16 w-16 md:h-28 md:w-28 rounded-full bg-[radial-gradient(circle_at_30%_30%,#fef08a,#eab308)] shadow-[0_0_60px_rgba(253,224,71,0.6)] animate-sun relative z-20"></div>
-              ) : (
-                <div className="relative h-16 w-16 md:h-24 md:w-24 rounded-full bg-[radial-gradient(circle_at_30%_30%,#f1f5f9,#cbd5e1)] shadow-[0_0_40px_rgba(255,255,255,0.2)] overflow-hidden z-20">
-                  <div className="absolute top-4 left-6 h-4 w-4 rounded-full bg-slate-400/30 shadow-inner"></div>
-                </div>
-              )}
-              
-              {/* TIME TOOLTIP (BELOW MOON) */}
-              <div className={`absolute top-[120%] right-0 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 z-50 ${hoveredObject === 'celestial' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
-                <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Local Time</div>
+            {isDay ? (
+              <div className="h-16 w-16 md:h-28 md:w-28 rounded-full bg-[radial-gradient(circle_at_30%_30%,#fef08a,#eab308)] shadow-[0_0_60px_rgba(253,224,71,0.6)] animate-sun relative z-20"></div>
+            ) : (
+              <div className="relative h-16 w-16 md:h-24 md:w-24 rounded-full bg-[radial-gradient(circle_at_30%_30%,#f1f5f9,#cbd5e1)] shadow-[0_0_40px_rgba(255,255,255,0.2)] overflow-hidden z-20">
+                <div className="absolute top-4 left-6 h-4 w-4 rounded-full bg-slate-400/30 shadow-inner"></div>
+              </div>
+            )}
+
+            {/* TIME TOOLTIP (BELOW MOON) */}
+            <div className={`absolute top-[120%] right-0 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 z-50 ${hoveredObject === 'celestial' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10 gap-8">
+                <div className="text-slate-400 text-xs uppercase tracking-wider">Local Time</div>
                 <div className="text-xl font-bold">{getLocalTime()}</div>
               </div>
+
+              <div className="text-slate-400 text-[10px] uppercase tracking-wider mb-2">{isDay ? 'Subsolar Point' : 'Sublunar Point'}</div>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                <div className="text-slate-300">Latitude</div>
+                <div className="text-right font-mono text-blue-200">{isDay ? astroData.sunLat.toFixed(2) : astroData.moonLat.toFixed(2)}°</div>
+                <div className="text-slate-300">Longitude</div>
+                <div className="text-right font-mono text-blue-200">{isDay ? astroData.sunLon.toFixed(2) : astroData.moonLon.toFixed(2)}°</div>
+                {!isDay && (
+                  <>
+                    <div className="text-slate-300">Lunar Phase</div>
+                    <div className="text-right font-mono text-blue-200">{Math.round(astroData.moonPhase * 100)}%</div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* 2. THE TEMP RING (Bottom Left) */}
-          <div 
-             className="absolute top-1/2 left-1/2 w-[160px] h-[160px] -translate-x-[55%] -translate-y-[45%] pointer-events-auto cursor-help group/ring"
-             onMouseEnter={() => setHoveredObject("temp_ring")}
-             onMouseLeave={() => setHoveredObject(null)}
-             onClick={() => setHoveredObject(hoveredObject === "temp_ring" ? null : "temp_ring")}
+          <div
+            className="absolute top-1/2 left-1/2 w-[160px] h-[160px] -translate-x-[55%] -translate-y-[45%] pointer-events-auto cursor-help group/ring"
+            onMouseEnter={() => setHoveredObject("temp_ring")}
+            onMouseLeave={() => setHoveredObject(null)}
+            onClick={() => setHoveredObject(hoveredObject === "temp_ring" ? null : "temp_ring")}
           >
-             <svg viewBox="0 0 120 120" className="w-full h-full">
-                <path 
-                    d="M 60 110 A 50 50 0 0 1 10 60" 
-                    fill="none" 
-                    stroke="rgba(255,255,255,0.15)" 
-                    strokeWidth="8" 
-                    strokeLinecap="round"
-                />
-                
-                <path 
-                    d="M 60 110 A 50 50 0 0 1 10 60" 
-                    fill="none" 
-                    stroke="url(#tempGradient)" 
-                    strokeWidth="8" 
-                    strokeLinecap="round"
-                    strokeDasharray="78.54" 
-                    strokeDashoffset={78.54 - getTempFill()} 
-                    className="transition-all duration-1000 ease-out"
-                />
-                
-                <defs>
-                    <linearGradient id="tempGradient" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stopColor="#facc15" />
-                        <stop offset="100%" stopColor="#ef4444" />
-                    </linearGradient>
-                </defs>
-             </svg>
+            <svg viewBox="0 0 120 120" className="w-full h-full">
+              <path
+                d="M 60 110 A 50 50 0 0 1 10 60"
+                fill="none"
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
 
-             {/* TEMP TOOLTIP (FIXED Z-INDEX) */}
-             <div className={`absolute top-full right-full mr-2 w-max bg-slate-900/90 backdrop-blur-md border border-red-500/30 text-white text-sm font-medium py-2 px-4 rounded-xl shadow-2xl transition-opacity duration-300 pointer-events-none z-50 ${hoveredObject === 'temp_ring' ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="flex items-center gap-2">
-                    <Thermometer size={16} className="text-red-400"/>
-                    <div>
-                        <div className="text-[10px] text-slate-400 uppercase">Temperature</div>
-                        <div className="text-lg font-bold text-red-100">{realData ? Math.round(realData.main.temp) : "--"}°C</div>
-                    </div>
+              <path
+                d="M 60 110 A 50 50 0 0 1 10 60"
+                fill="none"
+                stroke="url(#tempGradient)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray="78.54"
+                strokeDashoffset={78.54 - getTempFill()}
+                className="transition-all duration-1000 ease-out"
+              />
+
+              <defs>
+                <linearGradient id="tempGradient" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%" stopColor="#facc15" />
+                  <stop offset="100%" stopColor="#ef4444" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            {/* TEMP TOOLTIP (FIXED Z-INDEX) */}
+            <div className={`absolute top-full right-full mr-2 w-max bg-slate-900/90 backdrop-blur-md border border-red-500/30 text-white text-sm font-medium py-2 px-4 rounded-xl shadow-2xl transition-opacity duration-300 pointer-events-none z-50 ${hoveredObject === 'temp_ring' ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="flex items-center gap-2">
+                <Thermometer size={16} className="text-red-400" />
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase">Temperature</div>
+                  <div className="text-lg font-bold text-red-100">{realData ? Math.round(realData.main.temp) : "--"}°C</div>
                 </div>
-             </div>
+              </div>
+            </div>
           </div>
 
         </div>
 
         <div className="absolute inset-0 z-0 pointer-events-none">
-          {stars.map((star) => (
+          {currentScene !== 'orbit' && stars.map((star) => (
             <div key={star.id} className="absolute bg-white rounded-full animate-star" style={{ top: `${star.top}%`, left: `${star.left}%`, width: `${star.size}px`, height: `${star.size}px`, animationDuration: `${2 + star.delay}s` }} />
           ))}
         </div>
 
         {/* CLOUDS WITH TOOLTIP */}
         <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
-          {clouds.map((cloud) => (
+          {currentScene !== 'orbit' && clouds.map((cloud) => (
             <div
-                key={cloud.id}
-                className="absolute pointer-events-auto cursor-help animate-cloud group/cloud"
-                style={{
-                    width: `${cloud.width}px`,
-                    top: `${cloud.top}%`,
-                    left: `${cloud.left}%`,
-                    animationDuration: `${cloud.speed}s`,
-                    animationDelay: `${cloud.delay}s`
-                }}
+              key={cloud.id}
+              className="absolute pointer-events-auto cursor-help animate-cloud group/cloud"
+              style={{
+                width: `${cloud.width}px`,
+                top: `${cloud.top}%`,
+                left: `${cloud.left}%`,
+                animationDuration: `${cloud.speed}s`,
+                animationDelay: `${cloud.delay}s`
+              }}
             >
-                <svg viewBox="0 0 120 100" className="w-full h-full transition-colors duration-1000" style={{ color: getCloudColor() }}>
-                    <path fill="currentColor" d={cloudPath} />
-                </svg>
-                
-                {/* Cloud Tooltip: Hover only on desktop, auto-handled by click elsewhere */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover/cloud:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                    <span className="font-bold flex items-center gap-1">
-                        <CloudRain size={10} className="text-blue-300"/>
-                        {getPrecipitationVolume() > 0 ? `${getPrecipitationVolume()} mm` : "No Rain"}
-                    </span>
-                </div>
+              <svg viewBox="0 0 120 100" className="w-full h-full transition-colors duration-1000" style={{ color: getCloudColor() }}>
+                <path fill="currentColor" d={cloudPath} />
+              </svg>
+
+              {/* Cloud Tooltip: Hover only on desktop, auto-handled by click elsewhere */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover/cloud:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <span className="font-bold flex items-center gap-1">
+                  <CloudRain size={10} className="text-blue-300" />
+                  {getPrecipitationVolume() > 0 ? `${getPrecipitationVolume()} mm` : "No Rain"}
+                </span>
+              </div>
             </div>
           ))}
         </div>
 
         <div className="absolute inset-0 z-[20] pointer-events-none overflow-hidden">
-          {raindrops.map((drop) => (
+          {currentScene !== 'orbit' && raindrops.map((drop) => (
             <div key={drop.id} className="animate-rain absolute w-[2px] bg-slate-200 opacity-40 rounded-full" style={{ height: `${drop.height}px`, left: `${drop.left}%`, animationDuration: `${drop.speed}s`, animationDelay: `${drop.delay}s`, transform: `rotate(${drop.rotation}deg)` }} />
           ))}
-          {snowflakes.map((flake) => (
+          {currentScene !== 'orbit' && snowflakes.map((flake) => (
             <div key={flake.id} className="animate-snow absolute bg-white rounded-full opacity-80 shadow-[0_0_5px_white]" style={{ width: `${flake.size}px`, height: `${flake.size}px`, left: `${flake.left}%`, animationDuration: `${flake.speed}s`, animationDelay: `${flake.delay}s` }} />
           ))}
         </div>
@@ -435,17 +473,17 @@ export default function Home() {
               <svg viewBox="0 0 120 130" className="w-40 md:w-64 h-auto drop-shadow-2xl transition-transform duration-1000 ease-in-out" style={{ transform: `rotate(${boatRotation + (weather === 'storm' && lightning ? Math.random() * 10 - 5 : 0)}deg)` }} onClick={() => setHoveredObject(hoveredObject === "boat" ? null : "boat")}>
                 <g style={{ filter: isFrozen ? 'hue-rotate(180deg) saturate(0.5) brightness(1.2)' : 'none', transition: 'filter 1s' }}>
                   <path d={boatPaths.mastBoom} fill={themeGroup.boat.mast} />
-                  <path d={boatPaths.mainsail} fill={themeGroup.boat.sail} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.06})` }}/>
-                  <path d={boatPaths.jib} fill={themeGroup.boat.jib} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.03})` }}/>
+                  <path d={boatPaths.mainsail} fill={themeGroup.boat.sail} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.06})` }} />
+                  <path d={boatPaths.jib} fill={themeGroup.boat.jib} className="origin-bottom transition-transform" style={{ transform: `scaleX(${1 + intensity * 0.03})` }} />
                   <path d={boatPaths.hull} fill={themeGroup.boat.hull} />
                   <path d={boatPaths.deck} fill={themeGroup.boat.deck} />
                 </g>
               </svg>
-              
+
               {/* BOAT GLASS TOOLTIP - Show on hover (desktop) OR click (mobile) */}
               <div className={`absolute bottom-full mb-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm py-4 px-6 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-2 w-56 z-50 ${hoveredObject === 'boat' ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0'}`}>
                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
-                  <Wind size={18} className="text-blue-400"/>
+                  <Wind size={18} className="text-blue-400" />
                   <span className="font-bold text-base tracking-wide">Wind Report</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
@@ -459,8 +497,8 @@ export default function Home() {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Direction</span>
                   <div className="flex items-center gap-2 font-bold text-blue-200">
-                     {realData ? getCardinal(realData.wind.deg) : "-"} ({realData ? realData.wind.deg : 0}°)
-                     <Navigation size={12} style={{transform: `rotate(${realData ? realData.wind.deg : 0}deg)`}} />
+                    {realData ? getCardinal(realData.wind.deg) : "-"} ({realData ? realData.wind.deg : 0}°)
+                    <Navigation size={12} style={{ transform: `rotate(${realData ? realData.wind.deg : 0}deg)` }} />
                   </div>
                 </div>
               </div>
@@ -469,29 +507,29 @@ export default function Home() {
             {/* WAVES */}
             <div className="absolute bottom-0 left-0 right-0 z-[10] w-full overflow-hidden pointer-events-none" style={{ height: '35vh', minHeight: '300px' }}>
               {/* WATER HOVER INTERACTION */}
-              <div 
+              <div
                 className="absolute inset-0 z-[40] pointer-events-auto cursor-help group/water"
                 onMouseEnter={() => setHoveredObject("water")}
                 onMouseLeave={() => setHoveredObject(null)}
                 onClick={() => setHoveredObject(hoveredObject === "water" ? null : "water")}
               />
-              
+
               {/* WATER TOOLTIP */}
               <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 w-max bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-sm font-medium py-3 px-5 rounded-xl shadow-2xl transition-all duration-300 pointer-events-none translate-y-4 z-50 ${hoveredObject === 'water' ? 'opacity-100 translate-y-0' : 'opacity-0'}`}>
-                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                    <Waves size={18} className="text-cyan-400"/>
-                    <span className="font-bold tracking-wide">Location Data</span>
-                 </div>
-                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-                    <div className="text-slate-400">Latitude</div>
-                    <div className="font-mono text-right">{realData ? realData.coord.lat : "--"}</div>
-                    
-                    <div className="text-slate-400">Longitude</div>
-                    <div className="font-mono text-right">{realData ? realData.coord.lon : "--"}</div>
-                    
-                    <div className="text-slate-400">Sea Level</div>
-                    <div className="font-mono text-right">{realData && realData.main.sea_level ? `${realData.main.sea_level} hPa` : "N/A"}</div>
-                 </div>
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                  <Waves size={18} className="text-cyan-400" />
+                  <span className="font-bold tracking-wide">Location Data</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                  <div className="text-slate-400">Latitude</div>
+                  <div className="font-mono text-right">{realData ? realData.coord.lat : "--"}</div>
+
+                  <div className="text-slate-400">Longitude</div>
+                  <div className="font-mono text-right">{realData ? realData.coord.lon : "--"}</div>
+
+                  <div className="text-slate-400">Sea Level</div>
+                  <div className="font-mono text-right">{realData && realData.main.sea_level ? `${realData.main.sea_level} hPa` : "N/A"}</div>
+                </div>
               </div>
 
               {isFrozen && <div className="absolute inset-0 z-[30] opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay pointer-events-none" />}
@@ -510,9 +548,11 @@ export default function Home() {
           </>
         )}
 
-        
+
         {currentScene === 'balloon' && <SceneBalloon weather={weather} isDay={isDay} intensity={intensity} realData={realData} />}
-        
+
+        {currentScene === 'orbit' && <SceneOrbit weather={weather} isDay={isDay} intensity={intensity} realData={realData} />}
+
 
       </div>
 
@@ -520,22 +560,22 @@ export default function Home() {
           HUD LAYER
           ========================================================================= */}
       <div className="absolute inset-0 z-[60] pointer-events-none">
-        
+
         {/* TOP BAR - Responsive */}
         <div className="absolute top-6 left-6 pointer-events-auto flex items-center gap-4 flex-wrap">
-          <button 
-            onClick={() => setMenuOpen(!menuOpen)} 
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
             className="bg-slate-900/40 backdrop-blur-xl p-3 rounded-full text-white border border-white/10 hover:bg-slate-800 transition-colors shadow-2xl"
           >
-            {menuOpen ? <X size={20}/> : <Menu size={20}/>}
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <form 
+          <form
             onSubmit={(e) => { e.preventDefault(); fetchWeather(city); }}
             className="flex gap-2 bg-slate-900/40 backdrop-blur-xl p-2 rounded-full border border-white/10 shadow-xl transition-all focus-within:bg-slate-900/60"
           >
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Search..."
@@ -544,43 +584,43 @@ export default function Home() {
             <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full transition-colors">
               {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Search size={20} />}
             </button>
-            
+
             {/* DROPS */}
-            <div 
-                className="absolute top-full left-10 flex gap-1 -mt-1 z-[-1] cursor-pointer group/drops pointer-events-auto"
-                onMouseEnter={() => setHoveredDroplet(true)}
-                onMouseLeave={() => setHoveredDroplet(false)}
-                onClick={() => setHoveredDroplet(!hoveredDroplet)}
+            <div
+              className="absolute top-full left-10 flex gap-1 -mt-1 z-[-1] cursor-pointer group/drops pointer-events-auto"
+              onMouseEnter={() => setHoveredDroplet(true)}
+              onMouseLeave={() => setHoveredDroplet(false)}
+              onClick={() => setHoveredDroplet(!hoveredDroplet)}
             >
-                <svg width="40" height="20" viewBox="0 0 40 20" className="drop-shadow-sm">
-                    <path d="M5,0 Q10,10 5,15 Q0,10 5,0 Z" fill="url(#dropGrad)" opacity="0.9" />
-                    <path d="M20,0 Q28,15 20,20 Q12,15 20,0 Z" fill="url(#dropGrad)" opacity="1" />
-                    <path d="M35,0 Q38,8 35,12 Q32,8 35,0 Z" fill="url(#dropGrad)" opacity="0.8" />
-                    <defs>
-                        <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.8" />
-                            <stop offset="100%" stopColor="#3b82f6" stopOpacity="1" />
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <div className={`absolute top-full left-0 mt-1 bg-slate-900/90 backdrop-blur-md text-white text-xs py-2 px-3 rounded-lg border border-white/20 whitespace-nowrap transition-opacity duration-300 ${hoveredDroplet ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                    <div className="flex items-center gap-2">
-                        <Droplets size={12} className="text-blue-400"/>
-                        <span className="font-bold">Humidity: {realData ? realData.main.humidity : "--"}%</span>
-                    </div>
+              <svg width="40" height="20" viewBox="0 0 40 20" className="drop-shadow-sm">
+                <path d="M5,0 Q10,10 5,15 Q0,10 5,0 Z" fill="url(#dropGrad)" opacity="0.9" />
+                <path d="M20,0 Q28,15 20,20 Q12,15 20,0 Z" fill="url(#dropGrad)" opacity="1" />
+                <path d="M35,0 Q38,8 35,12 Q32,8 35,0 Z" fill="url(#dropGrad)" opacity="0.8" />
+                <defs>
+                  <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="1" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className={`absolute top-full left-0 mt-1 bg-slate-900/90 backdrop-blur-md text-white text-xs py-2 px-3 rounded-lg border border-white/20 whitespace-nowrap transition-opacity duration-300 ${hoveredDroplet ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <div className="flex items-center gap-2">
+                  <Droplets size={12} className="text-blue-400" />
+                  <span className="font-bold">Humidity: {realData ? realData.main.humidity : "--"}%</span>
                 </div>
+              </div>
             </div>
           </form>
 
           {/* PERMANENT CITY DISPLAY (Hidden on very small screens if needed, mostly visible) */}
           {realData && (
             <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-xl p-2 px-4 rounded-full border border-white/10 shadow-xl text-white hidden md:flex">
-                <div className="flex items-center gap-1">
-                    <MapPin size={16} className="text-blue-400"/>
-                    <span className="font-bold text-sm">{realData.name}</span>
-                </div>
-                <div className="w-px h-4 bg-white/20"></div>
-                <div className="font-mono text-lg">{Math.round(realData.main.temp)}°</div>
+              <div className="flex items-center gap-1">
+                <MapPin size={16} className="text-blue-400" />
+                <span className="font-bold text-sm">{realData.name}</span>
+              </div>
+              <div className="w-px h-4 bg-white/20"></div>
+              <div className="font-mono text-lg">{Math.round(realData.main.temp)}°</div>
             </div>
           )}
         </div>
@@ -597,177 +637,182 @@ export default function Home() {
               { id: 'aqi', label: 'Air', icon: Activity },
               { id: 'location', label: 'City', icon: MapPin },
             ].map((item) => (
-              <button 
+              <button
                 key={item.id}
                 onClick={() => addWidget(item.id as WidgetType)}
                 className="flex flex-col items-center justify-center bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/5 transition-colors gap-2 group"
               >
-                <item.icon size={20} className="text-slate-300 group-hover:text-blue-400 transition-colors"/>
+                <item.icon size={20} className="text-slate-300 group-hover:text-blue-400 transition-colors" />
                 <span className="text-xs text-slate-300">{item.label}</span>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"><Plus size={12} className="text-blue-400"/></div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"><Plus size={12} className="text-blue-400" /></div>
               </button>
             ))}
           </div>
 
           {/* SCENE SELECTOR */}
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4">Environments</div>
-          <div className="grid grid-cols-5 gap-2 mb-4">
-            <button onClick={() => setCurrentScene("boat")} className={`p-2 rounded-lg border ${currentScene === 'boat' ? 'bg-blue-600 border-blue-400' : 'bg-white/5 border-white/5'}`}><Ship size={16} className="text-white mx-auto"/></button>
-           
-            <button onClick={() => setCurrentScene("balloon")} className={`p-2 rounded-lg border ${currentScene === 'balloon' ? 'bg-sky-600 border-sky-400' : 'bg-white/5 border-white/5'}`}><Wind size={16} className="text-white mx-auto"/></button>
-             </div>
-          
+          <div className="grid grid-cols-6 gap-2 mb-4">
+            <button onClick={() => setCurrentScene("boat")} className={`p-2 rounded-lg border ${currentScene === 'boat' ? 'bg-blue-600 border-blue-400' : 'bg-white/5 border-white/5'}`}><Ship size={16} className="text-white mx-auto" /></button>
+            <button onClick={() => setCurrentScene("balloon")} className={`p-2 rounded-lg border ${currentScene === 'balloon' ? 'bg-sky-600 border-sky-400' : 'bg-white/5 border-white/5'}`}><Wind size={16} className="text-white mx-auto" /></button>
+            <button onClick={() => setCurrentScene("orbit")} className={`p-2 rounded-lg border ${currentScene === 'orbit' ? 'bg-indigo-600 border-indigo-400' : 'bg-white/5 border-white/5'}`}><Globe size={16} className="text-white mx-auto" /></button>
+          </div>
+
           <div className="h-px bg-white/10 w-full mb-4"></div>
-          
-          <button 
+
+          <button
             onClick={() => { setViewMode("dashboard"); setMenuOpen(false); }}
             className="w-full flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-600 p-3 rounded-xl transition-colors font-bold text-xs text-white"
           >
-            <LayoutDashboard size={16}/> View Dashboard
+            <LayoutDashboard size={16} /> View Dashboard
           </button>
         </div>
 
         {/* --- FULL SCREEN DASHBOARD OVERLAY (Responsive Grid) --- */}
         {viewMode === "dashboard" && (
-            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-3xl z-[200] pointer-events-auto p-4 md:p-8 flex flex-col animate-in fade-in duration-300 overflow-y-auto">
-                <div className="flex justify-between items-center mb-4 md:mb-8 flex-shrink-0">
-                    <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <LayoutDashboard className="text-blue-400"/> Weather Station
-                    </h1>
-                    <button 
-                        onClick={() => setViewMode("hud")}
-                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-white transition-colors text-sm md:text-base"
-                    >
-                        <X size={18}/> Close
-                    </button>
-                </div>
-                
-                {realData ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-8">
-                        {/* MAIN CARD */}
-                        <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-white/10 p-6 rounded-3xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-6 opacity-20"><MapPin size={80} /></div>
-                            <div className="text-slate-300 uppercase text-xs font-bold tracking-widest mb-1">Current Location</div>
-                            <div className="text-3xl md:text-4xl font-bold text-white mb-1">{realData.name}</div>
-                            <div className="text-sm text-slate-300 mb-6">{realData.sys.country} • {realData.coord.lat.toFixed(2)}° N, {realData.coord.lon.toFixed(2)}° E</div>
-                            <div className="flex items-baseline gap-2 mb-2">
-                                <span className="text-5xl md:text-6xl font-bold text-white">{Math.round(realData.main.temp)}°</span>
-                                <span className="text-slate-400 text-sm">H: {Math.round(realData.main.temp_max)}° L: {Math.round(realData.main.temp_min)}°</span>
-                            </div>
-                            <div className="text-lg text-blue-200 capitalize flex items-center gap-2">
-                                {realData.weather[0].description}
-                            </div>
-                        </div>
-
-                        {/* ATMOSPHERE DETAILS */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
-                                <div className="text-slate-400 text-xs uppercase"><Thermometer size={14} className="inline mr-1"/> Feels Like</div>
-                                <div className="text-2xl font-bold text-white">{Math.round(realData.main.feels_like)}°</div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <div className="text-slate-400 text-xs uppercase"><Droplets size={14} className="inline mr-1"/> Humidity</div>
-                                <div className="text-2xl font-bold text-white">{realData.main.humidity}%</div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <div className="text-slate-400 text-xs uppercase"><Gauge size={14} className="inline mr-1"/> Pressure</div>
-                                <div className="text-2xl font-bold text-white">{realData.main.pressure} hPa</div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <div className="text-slate-400 text-xs uppercase"><Eye size={14} className="inline mr-1"/> Visibility</div>
-                                <div className="text-2xl font-bold text-white">{(realData.visibility/1000).toFixed(1)} km</div>
-                            </div>
-                            <div className="flex flex-col gap-1 col-span-2">
-                                <div className="text-slate-400 text-xs uppercase"><CloudFog size={14} className="inline mr-1"/> Cloudiness</div>
-                                <div className="text-2xl font-bold text-white">{realData.clouds.all}%</div>
-                            </div>
-                        </div>
-
-                        {/* WIND */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col justify-between">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Wind size={20} className="text-blue-400"/>
-                                <span className="font-bold text-white">Wind Conditions</span>
-                            </div>
-                            <div className="flex justify-between items-center text-center">
-                                <div>
-                                    <div className="text-3xl font-bold text-white">{realData.wind.speed}</div>
-                                    <div className="text-xs text-slate-400">Speed (m/s)</div>
-                                </div>
-                                <div>
-                                    <div className="text-3xl font-bold text-white">{realData.wind.deg}°</div>
-                                    <div className="text-xs text-slate-400">Direction</div>
-                                </div>
-                                <div>
-                                    <div className="text-3xl font-bold text-white">{realData.wind.gust || 0}</div>
-                                    <div className="text-xs text-slate-400">Gusts (m/s)</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ASTRO */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col justify-center gap-4">
-                             <div className="flex justify-between items-center bg-black/20 p-4 rounded-2xl">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-orange-500/20 rounded-full text-orange-400"><Sunrise size={20}/></div>
-                                    <div>
-                                        <div className="text-xs text-slate-400">Sunrise</div>
-                                        <div className="text-lg font-bold text-white">{formatTime(realData.sys.sunrise, realData.timezone)}</div>
-                                    </div>
-                                </div>
-                             </div>
-                             <div className="flex justify-between items-center bg-black/20 p-4 rounded-2xl">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-purple-500/20 rounded-full text-purple-400"><Sunset size={20}/></div>
-                                    <div>
-                                        <div className="text-xs text-slate-400">Sunset</div>
-                                        <div className="text-lg font-bold text-white">{formatTime(realData.sys.sunset, realData.timezone)}</div>
-                                    </div>
-                                </div>
-                             </div>
-                        </div>
-
-                        {/* POLLUTANTS & AQI */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Activity size={20} className="text-green-400"/>
-                                    <span className="font-bold text-white">Air Quality</span>
-                                </div>
-                                <div className="text-2xl font-bold text-green-300">{aqiData ? aqiData.main.aqi : "--"} <span className="text-sm text-slate-400">/ 5</span></div>
-                            </div>
-                            <div className="h-px bg-white/10 w-full"/>
-                            {aqiData && aqiData.components && (
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="flex justify-between"><span className="text-slate-400">PM2.5:</span> <span className="text-white font-mono">{aqiData.components.pm2_5}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">PM10:</span> <span className="text-white font-mono">{aqiData.components.pm10}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">NO2:</span> <span className="text-white font-mono">{aqiData.components.no2}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">O3:</span> <span className="text-white font-mono">{aqiData.components.o3}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">SO2:</span> <span className="text-white font-mono">{aqiData.components.so2}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">CO:</span> <span className="text-white font-mono">{aqiData.components.co}</span></div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* RAIN / PRECIPITATION */}
-                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col justify-center gap-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <CloudRain size={20} className="text-blue-400"/>
-                                    <span className="font-bold text-white">Precipitation (1h)</span>
-                                </div>
-                                <div className="text-2xl font-bold text-blue-300">{getPrecipitationVolume()} mm</div>
-                            </div>
-                            <div className="text-xs text-slate-400 text-center mt-2">
-                                Current rain/snow volume in the last hour.
-                            </div>
-                        </div>
-
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-center h-full text-slate-500">Loading Dashboard Data...</div>
-                )}
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-3xl z-[200] pointer-events-auto p-4 md:p-8 flex flex-col animate-in fade-in duration-300 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 md:mb-8 flex-shrink-0">
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                <LayoutDashboard className="text-blue-400" /> Weather Station
+              </h1>
+              <button
+                onClick={() => setViewMode("hud")}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-white transition-colors text-sm md:text-base"
+              >
+                <X size={18} /> Close
+              </button>
             </div>
+
+            {realData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-8">
+                {/* MAIN CARD */}
+                <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-white/10 p-6 rounded-3xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-20"><MapPin size={80} /></div>
+                  <div className="text-slate-300 uppercase text-xs font-bold tracking-widest mb-1">Current Location</div>
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-1">{realData.name}</div>
+                  <div className="text-sm text-slate-300 mb-6">{realData.sys.country} • {realData.coord.lat.toFixed(2)}° N, {realData.coord.lon.toFixed(2)}° E</div>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl md:text-6xl font-bold text-white">{Math.round(realData.main.temp)}°</span>
+                    <span className="text-slate-400 text-sm">H: {Math.round(realData.main.temp_max)}° L: {Math.round(realData.main.temp_min)}°</span>
+                  </div>
+                  <div className="text-lg text-blue-200 capitalize">{realData.weather[0].description}</div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-black/20 rounded-xl p-2 flex justify-between"><span className="text-slate-400">Feels Like</span><span className="text-white font-bold">{Math.round(realData.main.feels_like)}°C</span></div>
+                    <div className="bg-black/20 rounded-xl p-2 flex justify-between"><span className="text-slate-400">Humidity</span><span className="text-white font-bold">{realData.main.humidity}%</span></div>
+                  </div>
+                </div>
+
+                {/* ATMOSPHERE */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><Gauge size={14}/> Pressure</div><div className="text-xl font-bold text-white">{realData.main.pressure} hPa</div></div>
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><Eye size={14}/> Visibility</div><div className="text-xl font-bold text-white">{(realData.visibility/1000).toFixed(1)} km</div></div>
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><Droplets size={14}/> Dew Point</div><div className="text-xl font-bold text-white">{Math.round(realData.main.temp - ((100 - realData.main.humidity) / 5))}°C</div></div>
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><Thermometer size={14}/> Heat Index</div><div className="text-xl font-bold text-white">{Math.round(realData.main.feels_like + (realData.main.humidity > 40 ? 1.5 : 0))}°C</div></div>
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><Cloud size={14}/> Cloudiness</div><div className="text-xl font-bold text-white">{realData.clouds.all}%</div></div>
+                  <div className="flex flex-col gap-1"><div className="text-slate-400 text-xs uppercase flex items-center gap-1"><CloudRain size={14}/> Precip (1h)</div><div className="text-xl font-bold text-white">{getPrecipitationVolume()} mm</div></div>
+                </div>
+
+                {/* WIND with Compass */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-4">
+                  <div className="flex items-center gap-2"><Wind size={20} className="text-blue-400"/><span className="font-bold text-white">Wind Conditions</span></div>
+                  <div className="flex items-center gap-6">
+                    <div className="relative w-24 h-24 flex-shrink-0">
+                      <svg viewBox="0 0 100 100" className="w-full h-full opacity-60">
+                        <circle cx="50" cy="50" r="46" fill="none" stroke="#334155" strokeWidth="2"/>
+                        {['N','E','S','W'].map((d,i) => { const a=[0,90,180,270][i]*Math.PI/180; return <text key={d} x={50+38*Math.sin(a)} y={50-38*Math.cos(a)+4} textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">{d}</text>; })}
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Navigation size={28} className="text-blue-400" style={{transform:`rotate(${realData.wind.deg}deg)`}}/>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div><div className="text-xs text-slate-400">Speed</div><div className="text-2xl font-bold text-white">{realData.wind.speed} <span className="text-sm text-slate-400">m/s</span></div></div>
+                      <div><div className="text-xs text-slate-400">Gusts</div><div className="text-2xl font-bold text-white">{realData.wind.gust||0} <span className="text-sm text-slate-400">m/s</span></div></div>
+                      <div><div className="text-xs text-slate-400">Direction</div><div className="text-lg font-bold text-white">{getCardinal(realData.wind.deg)} ({realData.wind.deg}°)</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ASTRONOMY + MOON PHASE */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-3">
+                  <div className="flex items-center gap-2 mb-1"><Sun size={20} className="text-yellow-400"/><span className="font-bold text-white">Astronomy</span></div>
+                  {[
+                    {icon:<Sunrise size={18}/>, color:'bg-orange-500/20 text-orange-400', label:'Sunrise', value:formatTime(realData.sys.sunrise, realData.timezone)},
+                    {icon:<Sunset size={18}/>, color:'bg-purple-500/20 text-purple-400', label:'Sunset', value:formatTime(realData.sys.sunset, realData.timezone)},
+                    {icon:<Moon size={18}/>, color:'bg-indigo-500/20 text-indigo-300', label:'Moon Phase', value:getMoonPhase(new Date())},
+                    {icon:<Clock size={18}/>, color:'bg-sky-500/20 text-sky-300', label:'Day Length', value:(()=>{const s=realData.sys.sunset-realData.sys.sunrise; return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;})()},
+                  ].map((row,i) => (
+                    <div key={i} className="flex items-center gap-3 bg-black/20 p-3 rounded-2xl">
+                      <div className={`p-2 rounded-full ${row.color}`}>{row.icon}</div>
+                      <div><div className="text-xs text-slate-400">{row.label}</div><div className="text-base font-bold text-white">{row.value}</div></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* PRESSURE GAUGE */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2"><Gauge size={20} className="text-violet-400"/><span className="font-bold text-white">Pressure System</span></div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-bold ${realData.main.pressure>1013?'bg-blue-500/20 text-blue-300':'bg-orange-500/20 text-orange-300'}`}>{realData.main.pressure>1013?'HIGH':'LOW'}</span>
+                  </div>
+                  <div className="text-4xl font-bold text-white">{realData.main.pressure} <span className="text-base text-slate-400 font-normal">hPa</span></div>
+                  <div className="relative h-3 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-400 via-green-400 to-blue-400 rounded-full transition-all duration-1000" style={{width:`${Math.min(100,((realData.main.pressure-950)/120)*100)}%`}}/>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500"><span>950 Low</span><span>1013 Normal</span><span>1070 High</span></div>
+                  {realData.main.sea_level && <div className="flex justify-between text-xs bg-black/20 p-3 rounded-xl"><span className="text-slate-400">Sea Level</span><span className="text-white font-mono">{realData.main.sea_level} hPa</span></div>}
+                  {realData.main.grnd_level && <div className="flex justify-between text-xs bg-black/20 p-3 rounded-xl"><span className="text-slate-400">Ground Level</span><span className="text-white font-mono">{realData.main.grnd_level} hPa</span></div>}
+                </div>
+
+                {/* AQI + POLLUTANT BARS */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2"><Activity size={20} className="text-green-400"/><span className="font-bold text-white">Air Quality</span></div>
+                    <div className={`text-sm px-3 py-1 rounded-full font-bold ${[,'bg-green-500/20 text-green-300','bg-lime-500/20 text-lime-300','bg-yellow-500/20 text-yellow-300','bg-orange-500/20 text-orange-300','bg-red-500/20 text-red-300'][aqiData?.main?.aqi||1]}`}>
+                      {['','Good','Fair','Moderate','Poor','Hazardous'][aqiData?.main?.aqi||1]}
+                    </div>
+                  </div>
+                  <div className="text-4xl font-bold text-white">{aqiData?.main?.aqi||'--'} <span className="text-base text-slate-400 font-normal">/ 5</span></div>
+                  {aqiData?.components && (
+                    <div className="flex flex-col gap-2 mt-1">
+                      {[
+                        {label:'PM2.5',val:aqiData.components.pm2_5,max:75,color:'bg-pink-400'},
+                        {label:'PM10', val:aqiData.components.pm10, max:150,color:'bg-orange-400'},
+                        {label:'NO₂',  val:aqiData.components.no2,  max:200,color:'bg-yellow-400'},
+                        {label:'O₃',   val:aqiData.components.o3,   max:180,color:'bg-blue-400'},
+                        {label:'SO₂',  val:aqiData.components.so2,  max:350,color:'bg-purple-400'},
+                        {label:'CO',   val:aqiData.components.co,   max:10000,color:'bg-slate-400'},
+                      ].map(p => (
+                        <div key={p.label} className="flex items-center gap-2 text-xs">
+                          <span className="text-slate-400 w-10 flex-shrink-0">{p.label}</span>
+                          <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                            <div className={`h-full ${p.color} rounded-full transition-all duration-1000`} style={{width:`${Math.min(100,(p.val/p.max)*100)}%`}}/>
+                          </div>
+                          <span className="text-white font-mono w-16 text-right">{p.val} µg</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* RAIN / PRECIPITATION */}
+                <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex flex-col justify-center gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CloudRain size={20} className="text-blue-400" />
+                      <span className="font-bold text-white">Precipitation (1h)</span>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-300">{getPrecipitationVolume()} mm</div>
+                  </div>
+                  <div className="text-xs text-slate-400 text-center mt-2">
+                    Current rain/snow volume in the last hour.
+                  </div>
+                </div>
+
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500">Loading Dashboard Data...</div>
+            )}
+          </div>
         )}
 
         {/* ACTIVE WIDGETS (Only visible in HUD mode) */}
@@ -775,8 +820,8 @@ export default function Home() {
           <div
             key={widget.id}
             className={`absolute pointer-events-auto transition-transform duration-100 ease-out ${draggedWidget === widget.id ? 'scale-105 z-[100]' : 'scale-100'}`}
-            style={{ 
-              left: widget.x, 
+            style={{
+              left: widget.x,
               top: widget.y,
               zIndex: widget.zIndex,
               cursor: draggedWidget === widget.id ? 'grabbing' : 'grab'
@@ -786,33 +831,33 @@ export default function Home() {
           >
             {/* ULTRA-GLASSMORPHIC CONTAINER */}
             <div className={`backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden w-64 group transition-shadow duration-300 ${draggedWidget === widget.id ? 'shadow-[0_20px_50px_0_rgba(0,0,0,0.5)] bg-slate-900/50' : 'shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] bg-slate-900/20'}`}>
-              
+
               {/* SLIM DRAG HEADER */}
               <div className="bg-white/5 h-6 flex justify-between items-center px-2 cursor-grab active:cursor-grabbing border-b border-white/5">
-                <GripHorizontal size={12} className="text-slate-500 opacity-50 group-hover:opacity-100 transition-opacity"/>
+                <GripHorizontal size={12} className="text-slate-500 opacity-50 group-hover:opacity-100 transition-opacity" />
                 <button onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }} className="text-slate-500 hover:text-red-400 transition-colors">
-                  <X size={12}/>
+                  <X size={12} />
                 </button>
               </div>
-              
+
               {/* CONTENT */}
               <div className="p-4 relative">
                 {/* Inner Glow Effect */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
-                
+
                 {widget.type === 'temp' && (
                   <div className="flex flex-col items-center relative z-10">
-                    <Thermometer size={24} className="text-orange-400 mb-2"/>
+                    <Thermometer size={24} className="text-orange-400 mb-2" />
                     <div className="text-3xl font-bold text-white drop-shadow-md">{realData ? Math.round(realData.main.temp) : "--"}°</div>
                     <div className="text-xs text-slate-300">Feels like {realData ? Math.round(realData.main.feels_like) : "--"}°</div>
                   </div>
                 )}
                 {widget.type === 'wind' && (
                   <div className="flex flex-col items-center text-center relative z-10">
-                    <Wind size={24} className="text-blue-400 mb-2"/>
+                    <Wind size={24} className="text-blue-400 mb-2" />
                     <div className="text-2xl font-bold text-white drop-shadow-md">{realData ? realData.wind.speed : "--"} <span className="text-sm font-normal text-slate-300">m/s</span></div>
                     <div className="flex items-center gap-1 text-xs text-slate-300 mt-1">
-                      <Compass size={12} style={{transform: `rotate(${realData ? realData.wind.deg : 0}deg)`}}/>
+                      <Compass size={12} style={{ transform: `rotate(${realData ? realData.wind.deg : 0}deg)` }} />
                       {realData ? getCardinal(realData.wind.deg) : "-"}
                     </div>
                   </div>
@@ -820,39 +865,39 @@ export default function Home() {
                 {widget.type === 'astro' && (
                   <div className="flex flex-col items-center text-center gap-2 relative z-10">
                     <div className="flex justify-between w-full text-xs text-slate-300">
-                      <div className="flex items-center gap-1"><Sunrise size={12}/> {realData ? formatTime(realData.sys.sunrise, realData.timezone) : "--"}</div>
-                      <div className="flex items-center gap-1"><Sunset size={12}/> {realData ? formatTime(realData.sys.sunset, realData.timezone) : "--"}</div>
+                      <div className="flex items-center gap-1"><Sunrise size={12} /> {realData ? formatTime(realData.sys.sunrise, realData.timezone) : "--"}</div>
+                      <div className="flex items-center gap-1"><Sunset size={12} /> {realData ? formatTime(realData.sys.sunset, realData.timezone) : "--"}</div>
                     </div>
-                    <div className="h-px w-full bg-white/10"/>
+                    <div className="h-px w-full bg-white/10" />
                     <div className="flex items-center gap-2 text-xs text-indigo-300">
-                      <Moon size={14}/> {getMoonPhase(new Date())}
+                      <Moon size={14} /> {getMoonPhase(new Date())}
                     </div>
                   </div>
                 )}
                 {widget.type === 'atmos' && (
                   <div className="grid grid-cols-2 gap-4 text-center relative z-10">
                     <div>
-                      <Gauge size={20} className="text-emerald-400 mx-auto mb-1"/>
+                      <Gauge size={20} className="text-emerald-400 mx-auto mb-1" />
                       <div className="text-lg font-bold text-white drop-shadow-sm">{realData ? realData.main.pressure : "--"}</div>
                       <div className="text-[10px] text-slate-300">hPa</div>
                     </div>
                     <div>
-                      <Eye size={20} className="text-blue-400 mx-auto mb-1"/>
-                      <div className="text-lg font-bold text-white drop-shadow-sm">{realData ? (realData.visibility/1000).toFixed(1) : "--"}</div>
+                      <Eye size={20} className="text-blue-400 mx-auto mb-1" />
+                      <div className="text-lg font-bold text-white drop-shadow-sm">{realData ? (realData.visibility / 1000).toFixed(1) : "--"}</div>
                       <div className="text-[10px] text-slate-300">km</div>
                     </div>
                   </div>
                 )}
                 {widget.type === 'aqi' && (
                   <div className="flex flex-col items-center relative z-10">
-                    <Activity size={24} className="text-green-400 mb-2"/>
+                    <Activity size={24} className="text-green-400 mb-2" />
                     <div className="text-2xl font-bold text-white drop-shadow-md">{aqiData ? aqiData.main.aqi : "--"} <span className="text-sm font-normal text-slate-300">/ 5</span></div>
                     <div className="text-xs text-slate-300 mt-1">Air Quality Index</div>
                   </div>
                 )}
                 {widget.type === 'location' && (
                   <div className="flex flex-col items-center text-center relative z-10">
-                    <MapPin size={24} className="text-red-400 mb-2"/>
+                    <MapPin size={24} className="text-red-400 mb-2" />
                     <div className="text-xl font-bold text-white drop-shadow-md">{realData ? realData.name : "Select City"}</div>
                     <div className="text-xs text-slate-300">{realData ? realData.sys.country : "--"}</div>
                     <div className="text-[10px] text-slate-400 font-mono mt-1">{realData ? `${realData.coord.lat}, ${realData.coord.lon}` : ""}</div>
